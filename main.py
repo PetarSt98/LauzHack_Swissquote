@@ -9,6 +9,7 @@ import datetime
 import time
 import keyboard
 import json
+import dotenv
 from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, messaging
@@ -22,7 +23,8 @@ cors = CORS(app, resource={
 base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', 'https://finance.yahoo.com/']
 companies = ['bloomberg', 'IEX Cloud', 'finance yahoo']
 days_back = 7
-openai_api_key = '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'
+# Get the OpenAI API key from the .env file
+openai_api_key = dotenv.get_key(dotenv.find_dotenv(), 'OPENAI_API_KEY')
 market_scenario = None
 
 cred = credentials.Certificate("lauzhack-cce5e-firebase-adminsdk-omls8-239f3c856f.json")
