@@ -1,6 +1,8 @@
 import random
 import threading
 from flask import Flask, jsonify, request
+from flask_socketio import SocketIO
+from flask_socketio import join_room
 import pandas as pd
 import openai
 import requests
@@ -11,6 +13,7 @@ import keyboard
 
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', 'https://finance.yahoo.com/']
 companies = ['bloomberg', 'swissquote', 'finance.yahoo']
 days_back = 7
@@ -224,7 +227,7 @@ def keywords_extract(_articles, openai_api_key):
             api_key=openai_api_key
         )
         article['keywords'] = response.choices[0].text
-    # send
+    return _articles
 
 
 def invoke_advice_creation(user_id):
@@ -254,12 +257,9 @@ def invoke_advice_creation(user_id):
     return articles, result
 
 
-def notification():
+def notification(user_id):
     while True:
-        articles, result = invoke_advice_creation(1)
-
-        keywords_thread = threading.Thread(target=keywords_extract, args=(articles, openai_api_key))
-        keywords_thread.start()
+        articles, result = invoke_advice_creation(user_id)
 
         if is_advice_important(result, market_scenario):
             print(result)
@@ -273,9 +273,21 @@ def notification():
                 break
             if keyboard.is_pressed('s'):
                 print(result)
-                # send
+                socketio.emit('advice', {'user_id': user_id, 'result': result}, room=str(user_id))
                 break
             time.sleep(0.05)  # check every second
+
+
+@socketio.on('join')
+def on_join(room):
+    join_room(room)
+
+
+def notification_wrapper():
+    df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
+    for user_id in df.index:
+        user_thread = threading.Thread(target=notification, args=(user_id,))
+        user_thread.start()
 
 
 @app.route('/getAdvice', methods=['GET'])
@@ -286,6 +298,13 @@ def get_advice():
 
     articles, result = invoke_advice_creation(user_id)
     return jsonify({"articles": articles, "advice": result})
+
+
+@app.route('/news', methods=['GET'])
+def get_news():
+    articles = generate_financial_news(companies, days_back, openai_api_key, market_scenario)
+    articles = keywords_extract(articles, openai_api_key)
+    return jsonify({"articles": articles})
 
 
 @app.route('/setStrategy', methods=['POST'])
@@ -310,9 +329,9 @@ def set_strategy():
 
 
 if __name__ == '__main__':
-    notification_thread = threading.Thread(target=notification)
+    notification_thread = threading.Thread(target=notification_wrapper)
     notification_thread.start()
 
-    app.run(debug=True)
+    app.run(debug=False)
 
 
