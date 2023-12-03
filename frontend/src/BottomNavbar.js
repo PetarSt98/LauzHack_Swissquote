@@ -3,7 +3,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {CiBellOn, CiBullhorn, CiCircleList, CiCircleQuestion, CiUser} from "react-icons/ci";
 
-import './BottomNavbar.css'; // Import your custom CSS
+import './BottomNavbar.css';
+import {IoIosColorWand} from "react-icons/io"; // Import your custom CSS
 
 const BottomNavbar = () => {
     return (
@@ -18,7 +19,7 @@ const BottomNavbar = () => {
                 <div>Transactions</div>
             </NavLink>
             <NavLink to="/" className="center-button">
-                <CiCircleQuestion size={50} />
+                <IoIosColorWand size={50} />
             </NavLink>
             <NavLink to="/news" className="to-be-activated" activeClassName="active">
                 <CiBullhorn className="icon"/>

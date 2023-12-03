@@ -22,6 +22,16 @@
     font-style: italic;
 }
 
+h2.extra-h2 {
+    text-align: center;
+    font-size: 3rem;
+}
+
+.extra-span {
+    font-family: "SwissquoteBold", sans-serif;
+    color: var(--orange);
+}
+
 .rate-buttons {
     margin-left: 1em;
     cursor: pointer;

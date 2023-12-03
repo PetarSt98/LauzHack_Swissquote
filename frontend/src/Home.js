@@ -5,7 +5,6 @@ import './Home.css'
 import axios from "axios";
 import {FaRegThumbsDown, FaRegThumbsUp} from "react-icons/fa";
 import {VscRefresh} from "react-icons/vsc";
-import io from 'socket.io-client';
 
 const urlParams = new URLSearchParams(window.location.search);
 let userId = urlParams.get('user_id');
@@ -25,29 +24,11 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const socket = io('http://localhost:5000', { transports: ['websocket'] });
-
-    useEffect(() => {
-        // Join the room for user ID 222
-        socket.emit('join', '222');
-
-        socket.on('advice', (data) => {
-            // Handle the advice data
-            console.log(data.result);
-        });
-
-        // Clean up on unmount
-        return () => {
-            socket.off('advice');
-            socket.emit('leave', '222');
-        };
-    }, []);
-
     useEffect(() => {
         const fetchData = async () => {
             try {
                 // Replace 'your-endpoint-url' with the actual endpoint URL
-                const response = await axios.get(`http://localhost:5000/getAdvice?user_id=${userId}`);
+                const response = await axios.get(`http://giuseppesteduto.me:5000/getAdvice?user_id=${userId}`);
                 setData(response.data);
             } catch (error) {
                 setError(error);
@@ -72,7 +53,7 @@ const Home = () => {
             </div>
             {data &&
             <>
-                <h2>Based on your great profile, this is what your aissistant recommends:</h2>
+                <h2 className="extra-h2"><span className="extra-span">AI</span>SSISTANT</h2>
                 <div className="aissistant-response">
                     {data.advice}
                 </div>

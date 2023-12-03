@@ -46,7 +46,7 @@ export const requestForToken = () => {
             if (currentToken) {
                 console.log('current token for client: ', currentToken);
                 // Send the token to my server
-                axios.post(`http://localhost:5000/setToken`, {
+                axios.post(`http://giuseppesteduto.me:5000/setToken`, {
                     user_id: userId,
                     token: currentToken
                 })

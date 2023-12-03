@@ -34,7 +34,7 @@ const Profile = () => {
     })
     // Request user parameter from backend
     useEffect(() => {
-        axios.get(`http://localhost:5000/user?user_id=${userId}`)
+        axios.get(`http://giuseppesteduto.me:5000/user?user_id=${userId}`)
             .then(res => {
                 setUserData(res.data)
             })
@@ -44,7 +44,7 @@ const Profile = () => {
     }, [])
 
     const setPersonalGoal = (goal) => {
-        axios.post(`http://localhost:5000/setStrategy`, {
+        axios.post(`http://giuseppesteduto.me:5000/setStrategy`, {
             user_id: userId,
             strategy: goal
         })

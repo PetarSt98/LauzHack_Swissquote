@@ -1,8 +1,6 @@
 import random
 import threading
 from flask import Flask, jsonify, request
-from flask_socketio import SocketIO
-from flask_socketio import join_room
 import pandas as pd
 import openai
 import requests
@@ -10,8 +8,8 @@ from bs4 import BeautifulSoup
 import datetime
 import time
 import keyboard
+import json
 from flask_cors import CORS
-from pyfcm import FCMNotification
 import firebase_admin
 from firebase_admin import credentials, messaging
 
@@ -21,12 +19,11 @@ CORS(app)
 cors = CORS(app, resource={
     r"/*":{"origins":"*"}
 })
-socketio = SocketIO(app)
 base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', 'https://finance.yahoo.com/']
-companies = ['bloomberg', 'swissquote', 'finance.yahoo']
+companies = ['bloomberg', 'IEX Cloud', 'finance yahoo']
 days_back = 7
 openai_api_key = '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'
-market_scenario = 'Crypto Winter'
+market_scenario = None
 
 cred = credentials.Certificate("lauzhack-cce5e-firebase-adminsdk-omls8-239f3c856f.json")
 firebase_admin.initialize_app(cred)
@@ -192,7 +189,6 @@ def generate_advice(_name, _summary, _description, _strategy, openai_api_key, _m
                     - Avoid mentioning specific company names or exact financial figures.
                     - Be clear, concise, and informative, helping the customer make well-informed decisions.
                     - Name of customer: {_name}.
-                    - Add at the end Best regards, \n Swissquote.
                 ''',
         max_tokens=500,
         temperature=0.4,
@@ -273,9 +269,10 @@ def notification(user_id):
         articles, result = invoke_advice_creation(user_id)
 
         if is_advice_important(result, market_scenario):
+            print(result)
             send_notification(user_id, result)
         else:
-            print('...')
+            print("...")
 
         start_time = time.time()
         while time.time() - start_time < 3600:
@@ -284,24 +281,44 @@ def notification(user_id):
                 break
             if keyboard.is_pressed('s'):
                 print(result)
-                socketio.emit('advice', {'user_id': user_id, 'result': result}, room=str(user_id))
+                send_notification(user_id, result)
+                # socketio.emit('advice', {'user_id': user_id, 'result': result}, room=str(user_id))
                 break
             time.sleep(0.05)  # check every second
 
 
 def send_notification(user_id, mx):
+    global market_scenario
     print("start sending notification...")
     df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
+    market_scenario = df.loc[user_id, 'market_scenario']
     client_token = df.loc[user_id, 'token']
-    title = "Important advice from Swissquote!"
-    message = mx[:50] + '...'
+    new_data = {
+        'mx': mx,
+        'datetime': datetime.datetime.now() .strftime("%Y-%m-%d %H:%M"),
+        'user_id': user_id,
+    }
+
+    # Read existing data from JSON file, if it exists
+    try:
+        with open('notification_data.json', 'r') as json_file:
+            data = json.load(json_file)
+    except FileNotFoundError:
+        data = []
+
+    # Append new data
+    data.append(new_data)
+
+    # Write updated data back to JSON file
+    with open('notification_data.json', 'w') as json_file:
+        json.dump(data, json_file)
 
     # See documentation on defining a message payload.
     message = messaging.Message(
-        data={
-            'score': '850',
-            'time': '2:45',
-        },
+        notification=messaging.Notification(
+            title='Important notification from Swissquote!',
+            body="Urgent advice from Swissquote! Check out the latest trading advice for you!",
+        ),
         token=client_token,
     )
 
@@ -311,10 +328,23 @@ def send_notification(user_id, mx):
     # Response is a message ID string.
     print('Successfully sent message:', response)
 
-@socketio.on('join')
-def on_join(room):
-    join_room(room)
-    print(f"User {room} joined")
+
+@app.route('/notification', methods=['GET'])
+def get_notification():
+    user_id = request.args.get('user_id')
+    user_id = int(user_id) if user_id is not None else None
+    if user_id is None:
+        return jsonify({"error": "Missing user_id parameter"}), 400
+    else:
+        try:
+            with open('notification_data.json', 'r') as json_file:
+                data = json.load(json_file)
+                # Filter only the data that has the same user_id
+                data = [d for d in data if d['user_id'] == user_id]
+        except FileNotFoundError:
+            data = []
+        return jsonify(data), 200
+
 
 @app.route('/user/', methods=['GET'])
 def get_user():
@@ -333,13 +363,35 @@ def get_user():
     else:
         return jsonify({'status': 'error', 'message': 'User ID not found'}), 500
 
+@app.route('/user/transactions', methods=['GET'])
+def get_transactions():
+    user_id = request.args.get('user_id')  # Retrieve user_id from query parameter
+    # Return all the information about the user
+    df = pd.read_csv('Database.csv', index_col=0)
+    id = int(user_id)
+    user_dict = df.loc[id].to_dict()
+    if id in df.index:
+        # Read the Excel dataset specified in the CSV file
+        dataset = pd.read_csv(f"./{df.loc[id, 'dataset']}")
+        #Filter the transactions by ACTION_TYPE = 'Trading'
+        dataset = dataset[dataset['ACTION_TYPE'] == 'Trading']
+        # Return the last 50 transactions
+        transactions = dataset.tail(100).to_dict(orient='records')
+        # Convert NaN values to None
+        for transaction in transactions:
+            for key, value in transaction.items():
+                if isinstance(value, float) and pd.isna(value):
+                    transaction[key] = None
+        return jsonify(transactions), 200
+    else:
+        return jsonify({'status': 'error', 'message': 'User ID not found'}), 500
+
 
 def notification_wrapper():
     df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
     for user_id in df.index:
         user_thread = threading.Thread(target=notification, args=(user_id,))
         user_thread.start()
-    send_notification(1, "ciao amico bellissimo")
 
 
 @app.route('/getAdvice', methods=['GET'])
@@ -349,8 +401,7 @@ def get_advice():
     if user_id is None:
         return jsonify({"error": "Missing user_id parameter"}), 400  # Bad Request for missing user_id
 
-#     articles, result = invoke_advice_creation(user_id)
-    articles, result = [], "ciao"
+    articles, result = invoke_advice_creation(user_id)
     return jsonify({"articles": articles, "advice": result})
 
 
@@ -409,6 +460,6 @@ if __name__ == '__main__':
     notification_thread = threading.Thread(target=notification_wrapper)
     notification_thread.start()
 
-    app.run(debug=True)
+    app.run(debug=False)
 
 

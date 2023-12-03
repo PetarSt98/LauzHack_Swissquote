@@ -1,12 +1,23 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Notification from "./components/Notification";
 
 const Notifications = () => {
-    const [notifications, setNotifications] = useState([
-        "Notification number 1, maybe you should buy some things",
-        "Notification number 1, maybe you should buy some things",
-        "Yet another notification",
-    ]);
+    const [notifications, setNotifications] = useState([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`http://giuseppesteduto.me:5000/notification?user_id=1`);
+                const data = await response.json();
+                setNotifications(data);
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+                setNotifications([]);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const onDelete = (index) => {
         const newNotifications = notifications.filter((_, i) => i !== index);
@@ -16,10 +27,11 @@ const Notifications = () => {
     return <div>
         <h2 style={{marginBottom: "0em"}}>Notifications</h2>
         <div className="notifications-container">
-            {notifications.map((message, index) => (
+            {notifications.map((not, index) => (
                 <Notification
                     key={index}
-                    notificationMessage={message}
+                    notificationData={not.datetime}
+                    notificationMessage={not.mx}
                     onDelete={() => onDelete(index)}
                 />
             ))}

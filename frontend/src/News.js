@@ -12,7 +12,7 @@ const News = () => {
 
     // Request user parameter from backend
     useEffect(() => {
-        axios.get(`http://localhost:5000/news`)
+        axios.get(`http://giuseppesteduto.me:5000/news`)
             .then(res => {
                 setArticleData(res.data.articles)
                 setLoading(false);
