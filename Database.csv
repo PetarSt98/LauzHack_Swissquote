@@ -1,0 +1,3 @@
+user_id,name,dataset,strategy
+1,Joseph,Dataset_sq_JOSEPH.csv,slow
+2,Eva,Dataset_sq_EVA.csv,fast

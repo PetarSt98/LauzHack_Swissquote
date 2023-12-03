@@ -1,6 +1,6 @@
 import random
 import threading
-
+from flask import Flask, jsonify, request
 import pandas as pd
 import openai
 import requests
@@ -10,11 +10,12 @@ import time
 import keyboard
 
 
-base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', 'https://finance.yahoo.com/']  # Replace with the actual financial news website URL
+app = Flask(__name__)
+base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', 'https://finance.yahoo.com/']
 companies = ['bloomberg', 'swissquote', 'finance.yahoo']
 days_back = 7
 openai_api_key = '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'
-market_scenario = 'Market is very stable this week'
+market_scenario = 'Crypto Winter'
 
 
 def generate_financial_news(companies, days_back, openai_api_key, _market_scenario=None):
@@ -156,7 +157,7 @@ def analyze_investment_behavior(file_path, openai_api_key):
     return response.choices[0].text
 
 
-def generate_advice(_name, _sumarry, _description, openai_api_key, _market_scenario=None):
+def generate_advice(_name, _summary, _description, _strategy, openai_api_key, _market_scenario=None):
 
     # Initialize OpenAI GPT
     openai.api_key = openai_api_key
@@ -166,7 +167,8 @@ def generate_advice(_name, _sumarry, _description, openai_api_key, _market_scena
         engine="text-davinci-003",  # Or the latest GPT model
         prompt=f'''
                 Customer Investment Profile Description: {_description}\n
-                Summary of Latest Financial News: {summary}\n
+                Summary of Latest Financial News: {_summary}\n
+                Investment strategy that customer prefers: {_strategy}\n
                 {f"Important Market Scenario: {_market_scenario}!" if _market_scenario is not None else ""}
                 \nTask: Based on the customer's investment profile and recent financial news, generate tailored investment suggestions. Focus on suggesting general investment areas and strategies that align with the customer's profile. The response should:
                     - Be directly addressed to the customer.
@@ -207,7 +209,7 @@ def is_advice_important(advice, _market_scenario=None):
 
     # Interpret the response
     analysis = response.choices[0].text.strip().lower()
-    print(f'Analysis: {analysis}')
+
     return 'yes' in analysis
 
 
@@ -225,23 +227,39 @@ def keywords_extract(_articles, openai_api_key):
     # send
 
 
-if __name__ == '__main__':
+def invoke_advice_creation(user_id):
+    strategy = None
+    name = None
+    file_path = None
+
+    df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
+
+    # Check if user_id exists in the DataFrame
+    if user_id in df.index:
+        # Update strategy
+        strategy = df.loc[user_id, 'strategy']
+        name = df.loc[user_id, 'name']
+        file_path = df.loc[user_id, 'dataset']
+
+    # articles = fetch_financial_news(base_url, days_back)
+    articles = generate_financial_news(companies, days_back, openai_api_key, market_scenario)
+
+    summary = summarize_news(articles, openai_api_key)
+
+    description = analyze_investment_behavior(file_path, openai_api_key)
+    # print(description)
+
+    result = generate_advice(name, summary, description, strategy, openai_api_key, market_scenario)
+
+    return articles, result
+
+
+def notification():
     while True:
-        # articles = fetch_financial_news(base_url, days_back)
-        articles = generate_financial_news(companies, days_back, openai_api_key, market_scenario)
+        articles, result = invoke_advice_creation(1)
 
         keywords_thread = threading.Thread(target=keywords_extract, args=(articles, openai_api_key))
         keywords_thread.start()
-
-        summary = summarize_news(articles, openai_api_key)
-        # print(summary)
-
-        # Example usage
-        file_path = 'Dataset_sq_EVA.csv'
-        description = analyze_investment_behavior(file_path, openai_api_key)
-        # print(description)
-
-        result = generate_advice('Eva', summary, description, openai_api_key, market_scenario)
 
         if is_advice_important(result, market_scenario):
             print(result)
@@ -249,7 +267,7 @@ if __name__ == '__main__':
             print('...')
 
         start_time = time.time()
-        while time.time() - start_time < 3000:
+        while time.time() - start_time < 3600:
             if keyboard.is_pressed('space'):
                 print("Skipping wait...")
                 break
@@ -258,3 +276,43 @@ if __name__ == '__main__':
                 # send
                 break
             time.sleep(0.05)  # check every second
+
+
+@app.route('/getAdvice', methods=['GET'])
+def get_advice():
+    user_id = request.args.get('user_id')  # Retrieve user_id from query parameter
+    if user_id is None:
+        return jsonify({"error": "Missing user_id parameter"}), 400  # Bad Request for missing user_id
+
+    articles, result = invoke_advice_creation(user_id)
+    return jsonify({"articles": articles, "advice": result})
+
+
+@app.route('/setStrategy', methods=['POST'])
+def set_strategy():
+    data = request.json  # Get data from POST request
+    user_id = data.get('user_id')
+    strategy = data.get('strategy')
+
+    # Load the DataFrame
+    df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
+
+    # Check if user_id exists in the DataFrame
+    if user_id in df.index:
+        # Update strategy
+        df.loc[user_id, 'strategy'] = strategy
+        # Save changes back to CSV
+        df.to_csv('database.csv')
+        return jsonify({'status': 'success', 'message': 'Strategy updated'}), 200
+    else:
+        # User ID not found
+        return jsonify({'status': 'error', 'message': 'User ID not found'}), 404
+
+
+if __name__ == '__main__':
+    notification_thread = threading.Thread(target=notification)
+    notification_thread.start()
+
+    app.run(debug=True)
+
+
