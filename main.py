@@ -10,9 +10,16 @@ from bs4 import BeautifulSoup
 import datetime
 import time
 import keyboard
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)
+cors = CORS(app, resource={
+    r"/*":{
+        "origins":"*"
+    }
+})
 socketio = SocketIO(app)
 base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', 'https://finance.yahoo.com/']
 companies = ['bloomberg', 'swissquote', 'finance.yahoo']
@@ -54,7 +61,7 @@ def generate_financial_news(companies, days_back, openai_api_key, _market_scenar
 
         # Splitting the generated text into headline and article
         split_text = generated_text.split('\n', 1)  # Split at the first newline character
-        headline = split_text[0].strip()
+        headline = split_text[0].strip().lstrip("Headline: ")
         article = split_text[1].strip() if len(split_text) > 1 else ""
 
         articles.append({'date': date_limit_str, 'company': company, 'headline': headline, 'article': article})
@@ -109,7 +116,7 @@ def summarize_news(articles, openai_api_key):
 def analyze_investment_behavior(file_path, openai_api_key):
     # Read the Excel file
     # Read the CSV file, excluding the 'DATE_TRANSACTION' column
-    data = pd.read_csv(file_path).drop(columns=['DATE_TRANSACTION'])
+    data = pd.read_csv(f"./{file_path}").drop(columns=['DATE_TRANSACTION'])
 
     # Convert ACTION to a factor: 1 for 'Buy' and -1 for 'Sell'
     data['ACTION_FACTOR'] = data['ACTION'].apply(lambda x: 1 if x == 'Buy' else -1)
@@ -226,7 +233,7 @@ def keywords_extract(_articles, openai_api_key):
             temperature=0,
             api_key=openai_api_key
         )
-        article['keywords'] = response.choices[0].text
+        article['keywords'] = response.choices[0].text.split(',')
     return _articles
 
 
@@ -278,6 +285,19 @@ def notification(user_id):
             time.sleep(0.05)  # check every second
 
 
+@app.route('/user/', methods=['GET'])
+def get_user():
+    user_id = request.args.get('user_id')  # Retrieve user_id from query parameter
+    # Return all the information about the user
+    df = pd.read_csv('Database.csv', index_col=0)
+    id = int(user_id)
+    if id in df.index:
+        return jsonify(df.loc[id].to_dict()), 200
+    else:
+        return jsonify({'status': 'error', 'message': 'User ID not found'}), 500
+
+
+
 @socketio.on('join')
 def on_join(room):
     join_room(room)
@@ -293,6 +313,7 @@ def notification_wrapper():
 @app.route('/getAdvice', methods=['GET'])
 def get_advice():
     user_id = request.args.get('user_id')  # Retrieve user_id from query parameter
+    user_id = int(user_id) if user_id is not None else None
     if user_id is None:
         return jsonify({"error": "Missing user_id parameter"}), 400  # Bad Request for missing user_id
 
@@ -332,6 +353,6 @@ if __name__ == '__main__':
     notification_thread = threading.Thread(target=notification_wrapper)
     notification_thread.start()
 
-    app.run(debug=False)
+    app.run(debug=True)
 
 

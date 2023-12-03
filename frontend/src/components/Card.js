@@ -25,12 +25,12 @@ const Card = ({ article }) => {
         <div className="card-container">
             <h3>{article.headline}</h3>
             <div className="caption">
-                <span>{article.website}</span>
+                <span>{article.company}</span>
                 <span>{formatDate(article.date)}</span>
             </div>
             <hr />
             <div className="badges">
-                {article.tags.map(tag => (
+                {article.keywords.map(tag => (
                     <span key={tag} className="badge">{tag}</span>
                 ))}
             </div>
