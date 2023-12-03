@@ -9,8 +9,11 @@ import SwissquoteLogo from './assets/logo-swissquote-en.png'
 import News from "./News";
 import Transactions from "./Transactions";
 import Notifications from "./Notifications";
+import {requestForToken} from "./firebase";
 
 const App = () => {
+    requestForToken();
+
     return (
         <Router>
             <div className="app-container">

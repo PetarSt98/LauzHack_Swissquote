@@ -5,6 +5,7 @@ import './Home.css'
 import axios from "axios";
 import {FaRegThumbsDown, FaRegThumbsUp} from "react-icons/fa";
 import {VscRefresh} from "react-icons/vsc";
+import io from 'socket.io-client';
 
 const urlParams = new URLSearchParams(window.location.search);
 let userId = urlParams.get('user_id');
@@ -23,6 +24,24 @@ const Home = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const socket = io('http://localhost:5000', { transports: ['websocket'] });
+
+    useEffect(() => {
+        // Join the room for user ID 222
+        socket.emit('join', '222');
+
+        socket.on('advice', (data) => {
+            // Handle the advice data
+            console.log(data.result);
+        });
+
+        // Clean up on unmount
+        return () => {
+            socket.off('advice');
+            socket.emit('leave', '222');
+        };
+    }, []);
 
     useEffect(() => {
         const fetchData = async () => {

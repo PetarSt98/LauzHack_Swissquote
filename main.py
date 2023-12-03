@@ -11,14 +11,15 @@ import datetime
 import time
 import keyboard
 from flask_cors import CORS
+from pyfcm import FCMNotification
+import firebase_admin
+from firebase_admin import credentials, messaging
 
 
 app = Flask(__name__)
 CORS(app)
 cors = CORS(app, resource={
-    r"/*":{
-        "origins":"*"
-    }
+    r"/*":{"origins":"*"}
 })
 socketio = SocketIO(app)
 base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', 'https://finance.yahoo.com/']
@@ -26,6 +27,9 @@ companies = ['bloomberg', 'swissquote', 'finance.yahoo']
 days_back = 7
 openai_api_key = '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'
 market_scenario = 'Crypto Winter'
+
+cred = credentials.Certificate("lauzhack-cce5e-firebase-adminsdk-omls8-239f3c856f.json")
+firebase_admin.initialize_app(cred)
 
 
 def generate_financial_news(companies, days_back, openai_api_key, _market_scenario=None):
@@ -269,7 +273,7 @@ def notification(user_id):
         articles, result = invoke_advice_creation(user_id)
 
         if is_advice_important(result, market_scenario):
-            print(result)
+            send_notification(user_id, result)
         else:
             print('...')
 
@@ -284,6 +288,33 @@ def notification(user_id):
                 break
             time.sleep(0.05)  # check every second
 
+
+def send_notification(user_id, mx):
+    print("start sending notification...")
+    df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
+    client_token = df.loc[user_id, 'token']
+    title = "Important advice from Swissquote!"
+    message = mx[:50] + '...'
+
+    # See documentation on defining a message payload.
+    message = messaging.Message(
+        data={
+            'score': '850',
+            'time': '2:45',
+        },
+        token=client_token,
+    )
+
+    # Send a message to the device corresponding to the provided
+    # registration token.
+    response = messaging.send(message)
+    # Response is a message ID string.
+    print('Successfully sent message:', response)
+
+@socketio.on('join')
+def on_join(room):
+    join_room(room)
+    print(f"User {room} joined")
 
 @app.route('/user/', methods=['GET'])
 def get_user():
@@ -302,21 +333,13 @@ def get_user():
     else:
         return jsonify({'status': 'error', 'message': 'User ID not found'}), 500
 
-"""
-TODO:
- - Notification system
-"""
-
-@socketio.on('join')
-def on_join(room):
-    join_room(room)
-
 
 def notification_wrapper():
     df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
     for user_id in df.index:
         user_thread = threading.Thread(target=notification, args=(user_id,))
         user_thread.start()
+    send_notification(1, "ciao amico bellissimo")
 
 
 @app.route('/getAdvice', methods=['GET'])
@@ -356,6 +379,27 @@ def set_strategy():
         # Save changes back to CSV
         df.to_csv('Database.csv')
         return jsonify({'status': 'success', 'message': 'Strategy updated'}), 200
+    else:
+        # User ID not found
+        return jsonify({'status': 'error', 'message': 'User ID not found'}), 404
+
+@app.route('/setToken', methods=['POST'])
+def set_token():
+    data = request.json  # Get data from POST request
+    user_id = data.get('user_id')
+    token = data.get('token')
+    user_id = int(user_id) if user_id is not None else None
+
+    # Load the DataFrame
+    df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
+
+    # Check if user_id exists in the DataFrame
+    if user_id in df.index:
+        # Update strategy
+        df.loc[user_id, 'token'] = token
+        # Save changes back to CSV
+        df.to_csv('Database.csv')
+        return jsonify({'status': 'success', 'message': 'Token updated'}), 200
     else:
         # User ID not found
         return jsonify({'status': 'error', 'message': 'User ID not found'}), 404
