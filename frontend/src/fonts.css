@@ -1,0 +1,19 @@
+@font-face {
+    font-family: 'SwissquoteBold';
+    src: local('SwissquoteBold'),
+    url('./assets/fonts/Swissquote_CT-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'SwissquoteRegular';
+    src: local('SwissquoteRegular'),
+    url('./assets/fonts/Swissquote_CT-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    font-family: 'SwissquoteRegular', sans-serif;
+}

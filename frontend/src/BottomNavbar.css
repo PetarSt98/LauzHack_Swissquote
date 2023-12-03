@@ -1,0 +1,43 @@
+
+@import "palette.css";
+.bottom-navbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: var(--white);
+    /* Additional styling */
+}
+
+.bottom-navbar a {
+    text-decoration: none;
+    padding: 10px;
+    color: var(--black);
+    text-align: center;
+}
+
+.bottom-navbar .icon {
+    font-size: 2rem;
+}
+
+.bottom-navbar .center-button {
+    background-color: var(--orange); /* Example color */
+    border-radius: 50%;
+    border: 2 px solid var(--white);
+    transform: translateY(-50%);
+    color: var(--white);
+    height: 4em;
+    width: 4em;
+    font-weight: bold;
+    display: flex;
+    align-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    justify-content: center;
+}
+
+.to-be-activated.active {
+    color: var(--orange) !important;
+}

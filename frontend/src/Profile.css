@@ -1,0 +1,113 @@
+.propic-container {
+    display: flex;
+    margin-top: 1em;
+    justify-content: center;
+}
+
+.propic-container img {
+    height: 150px;
+    width: 150px;
+    border-radius: 50%;
+    border: 3px solid var(--orange);
+}
+
+.header-intro {
+    margin-top: 0.5rem;
+    text-align: center;
+    font-size: 3rem;
+}
+
+/**Financial goals**/
+#my-tooltip {
+    max-width: 250px;
+}
+
+.goals-container {
+    display: flex;
+    justify-content: space-around;
+}
+
+.financial-goal {
+    text-align: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--white);
+    border: 1px solid var(--black)
+}
+
+.financial-goal.active {
+    color: var(--white);
+    border: 1px solid var(--white);
+    background-color: var(--orange);
+}
+
+.financial-goal p {
+    margin-bottom: 0;
+}
+
+.header-intro .user-name {
+    font-family: "SwissquoteBold", sans-serif;
+    color: var(--orange);
+}
+
+.profile-caption {
+    margin-top: 0;
+    margin-bottom: 1em;
+    font-size: 1.2rem;
+}
+
+.donutchart {
+    display: block;
+    margin: auto;
+}
+
+.donutchart-arcs-path,
+.donutchart-legend-item,
+.donutchart-legend-item-label {
+    cursor: pointer;
+}
+
+.donutchart-innertext-label {
+    font-size: 18px;
+}
+
+.donutchart-innertext-value {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.donutchart-arcs-path,
+.donutchart-legend-item {
+    fill-opacity: 0;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: forwards;
+    animation-name: DrawLine, FillIn;
+    animation-delay: 0.5s, .7s;
+    animation-duration: 1s, 1s;
+    stroke-dasharray: 1500;
+    stroke-dashoffset: 1500;
+}
+
+@keyframes DrawLine {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes FillIn {
+    from {
+        fill-opacity: 0;
+    }
+    to {
+        fill-opacity: 1;
+    }
+}
+
+.selected.donutchart-legend-item-label,
+.toggled.donutchart-legend-item-label {
+    fill: #f44336;
+    text-decoration: underline;
+}

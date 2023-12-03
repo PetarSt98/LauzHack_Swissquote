@@ -1,0 +1,43 @@
+.card-container {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+    border-radius: 5px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.card-container h3 {
+    margin: 0;
+}
+
+.caption {
+    display: flex;
+    justify-content: space-between;
+    color: grey;
+    font-style: italic;
+    margin-top: 10px;
+    font-size: 0.8em;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: lightgrey;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.badges {
+    display: flex;
+    gap: 10px;
+}
+
+.badge {
+    /*background-color: #ffc0b1;*/
+    /*color: var(--orange-dark);*/
+    background-color: var(--orange);
+    color: var(--white);
+    font-size: 0.9em;
+    font-weight: bold;
+    padding: 5px;
+    border-radius: 3px;
+}
