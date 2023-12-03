@@ -7,7 +7,6 @@ import requests
 from bs4 import BeautifulSoup
 import datetime
 import time
-import keyboard
 import json
 import dotenv
 from flask_cors import CORS
@@ -24,7 +23,7 @@ base_url = ['https://www.bloomberg.com/europe', 'https://www.swissquote.com/', '
 companies = ['bloomberg', 'IEX Cloud', 'finance yahoo']
 days_back = 7
 # Get the OpenAI API key from the .env file
-openai_api_key = dotenv.get_key(dotenv.find_dotenv(), 'OPENAI_API_KEY')
+openai_api_key = dotenv.get_key(dotenv.find_dotenv(), 'OPENAI_KEY')
 market_scenario = None
 
 cred = credentials.Certificate("lauzhack-cce5e-firebase-adminsdk-omls8-239f3c856f.json")
@@ -278,10 +277,10 @@ def notification(user_id):
 
         start_time = time.time()
         while time.time() - start_time < 3600:
-            if keyboard.is_pressed('space'):
+            if input() == 'skip':
                 print("Skipping wait...")
                 break
-            if keyboard.is_pressed('s'):
+            if input() == 'notification':
                 print(result)
                 send_notification(user_id, result)
                 # socketio.emit('advice', {'user_id': user_id, 'result': result}, room=str(user_id))
