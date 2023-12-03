@@ -3,6 +3,8 @@ import { useState } from "react";
 import ClockLoader from "react-spinners/ClockLoader";
 import './Home.css'
 import axios from "axios";
+import {FaRegThumbsDown, FaRegThumbsUp} from "react-icons/fa";
+import {VscRefresh} from "react-icons/vsc";
 
 const urlParams = new URLSearchParams(window.location.search);
 let userId = urlParams.get('user_id');
@@ -55,6 +57,14 @@ const Home = () => {
                 <div className="aissistant-response">
                     {data.advice}
                 </div>
+                <div className="rate-caption">
+                    <p>Rate this answer</p>
+                    <div className="rate-buttons">
+                        <FaRegThumbsUp />&nbsp;&nbsp;
+                        <FaRegThumbsDown />
+                    </div>
+                </div>
+                <button className="btn-refresh" onClick={() => window.location.reload()}><VscRefresh />Refresh!</button>
             </>
             }
         </>

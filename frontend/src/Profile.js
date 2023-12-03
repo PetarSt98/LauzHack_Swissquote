@@ -44,7 +44,16 @@ const Profile = () => {
     }, [])
 
     const setPersonalGoal = (goal) => {
-        return 1
+        axios.post(`http://localhost:5000/setStrategy`, {
+            user_id: userId,
+            strategy: goal
+        })
+            .then(res => {
+                setUserData({...userData, strategy: goal})
+            })
+            .catch(err => {
+                console.log(err)
+            })
     }
 
     return <div>
@@ -63,7 +72,7 @@ const Profile = () => {
         <div className="goals-container">
             <div
                 className={`financial-goal ${userData.strategy === "fast" ? "active" : ""}`}
-                onClick={() => setPersonalGoal("short")}
+                onClick={() => setPersonalGoal("fast")}
             >
                 <GiRabbit className="icon" size={40} />
                 <p>Short term</p>
@@ -77,7 +86,7 @@ const Profile = () => {
             </div>
             <div
                 className={`financial-goal ${userData.strategy === "slow" ? "active" : ""}`}
-                onClick={() => setPersonalGoal("long")}
+                onClick={() => setPersonalGoal("slow")}
             >
                 <GiSnail className="icon" size={40} />
                 <p>Long term</p>
@@ -85,16 +94,16 @@ const Profile = () => {
         </div>
         <h2>Your account activities</h2>
         <Doughnut data = {{
-            labels: ['Trading', 'Payment', 'Income', 'Forex'],
+            labels: userData.action_type_counts ? Object.keys(userData.action_type_counts) : [],
             datasets: [
                 {
                     label: '# of transactions',
-                    data: [90, 4, 15, 4],
+                    data: userData.action_type_counts ? Object.values(userData.action_type_counts) : [],
                     backgroundColor: [
                     '#474747',
                     '#707070',
-                    '#999999',
-                    '#c2c2c2'
+                    '#c2c2c2',
+                    '#fa5B35'
                     ],
                     borderWidth: 1,
                 },

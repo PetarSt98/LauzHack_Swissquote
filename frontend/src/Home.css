@@ -13,3 +13,33 @@
     color: var(--black);
     background-color: var(--orange);
 }
+
+.rate-caption {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    color: var(--orange);
+    font-style: italic;
+}
+
+.rate-buttons {
+    margin-left: 1em;
+    cursor: pointer;
+}
+
+.btn-refresh {
+    cursor: pointer;
+    height: 3rem;
+    border-radius: 1.5rem;
+    line-height: 3rem;
+    font-size: 1.2rem;
+    width: 9rem;
+    margin: 0 auto;
+    color: var(--white);
+    background-color: var(--black);
+    border: 0 solid var(--black);
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}

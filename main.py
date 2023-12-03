@@ -291,12 +291,21 @@ def get_user():
     # Return all the information about the user
     df = pd.read_csv('Database.csv', index_col=0)
     id = int(user_id)
+    user_dict = df.loc[id].to_dict()
     if id in df.index:
-        return jsonify(df.loc[id].to_dict()), 200
+        # Read the Excel dataset specified in the CSV file
+        dataset = pd.read_csv(f"./{df.loc[id, 'dataset']}")
+        # In the dataset, count the number of rows grouping by the 'ACTION_TYPE' column
+        action_type_counts = dataset.groupby('ACTION_TYPE').size().to_dict()
+        user_dict['action_type_counts'] = action_type_counts
+        return jsonify(user_dict), 200
     else:
         return jsonify({'status': 'error', 'message': 'User ID not found'}), 500
 
-
+"""
+TODO:
+ - Notification system
+"""
 
 @socketio.on('join')
 def on_join(room):
@@ -317,7 +326,8 @@ def get_advice():
     if user_id is None:
         return jsonify({"error": "Missing user_id parameter"}), 400  # Bad Request for missing user_id
 
-    articles, result = invoke_advice_creation(user_id)
+#     articles, result = invoke_advice_creation(user_id)
+    articles, result = [], "ciao"
     return jsonify({"articles": articles, "advice": result})
 
 
@@ -333,16 +343,18 @@ def set_strategy():
     data = request.json  # Get data from POST request
     user_id = data.get('user_id')
     strategy = data.get('strategy')
+    user_id = int(user_id) if user_id is not None else None
 
     # Load the DataFrame
     df = pd.read_csv('Database.csv', index_col=0)  # Assuming first column is the index
 
+    print(f"User ID: {user_id}")
     # Check if user_id exists in the DataFrame
     if user_id in df.index:
         # Update strategy
         df.loc[user_id, 'strategy'] = strategy
         # Save changes back to CSV
-        df.to_csv('database.csv')
+        df.to_csv('Database.csv')
         return jsonify({'status': 'success', 'message': 'Strategy updated'}), 200
     else:
         # User ID not found

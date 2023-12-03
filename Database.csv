@@ -1,3 +1,3 @@
 user_id,name,dataset,strategy
-1,Joseph,datasets/Dataset_sq_JOSEPH.csv,slow
+1,Joseph,datasets/Dataset_sq_JOSEPH.csv,medium
 2,Eva,datasets/Dataset_sq_EVA.csv,fast
