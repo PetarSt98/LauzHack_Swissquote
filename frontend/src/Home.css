@@ -1,0 +1,15 @@
+.sweet-loading {
+    display: flex;
+    width: 100%;
+    position: absolute;
+    top: 15em;
+    justify-content: center;
+}
+
+.aissistant-response {
+    margin-top: 1em;
+    padding: 1em;
+    border-radius: 5px;
+    color: var(--black);
+    background-color: var(--orange);
+}
